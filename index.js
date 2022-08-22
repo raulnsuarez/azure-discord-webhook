@@ -1,8 +1,15 @@
-var https = require("https");
-var express = require("express");
-var app = express();
-var PORT = process.env.PORT || 5000;
-var password = 'Testingthisthing123'
+const https = require("https");
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 5000;
+const password = 'aHBbIbeUyj4JW6hc-eaMJqvT0r8JlzUBXx6R5pT6e31ZHmSL0q'
+
+app.use(express.json()).get("/", async (req, res) => {
+  res.status(400);
+      res.end(`App working`);
+      return;
+});
+
 app.use(express.json()).post("/", async (req, res) => {
   var whId, whToken;
 
@@ -10,7 +17,7 @@ app.use(express.json()).post("/", async (req, res) => {
     const atoken = req.get("Authorization");
     if (atoken != password){
       res.status(400);
-      res.end(`Authorization Header ${atoken} don't match`);
+      res.end(`No authorization`);
       return;
     }
   } catch {
@@ -35,7 +42,6 @@ For example, "/?q=https://discordapp.com/api/webhooks/728789913434980374/DIUrFts
       eventType,
       detailedMessage: { text },
       detailedMessage: { markdown },
-      //resource: { _links: { web: { href: url } } },
     } = req.body;
   } catch {
     res.status(400);
@@ -75,7 +81,7 @@ For example, "/?q=https://discordapp.com/api/webhooks/728789913434980374/DIUrFts
 });
 
 app.listen(PORT, function () {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Discord proxy app listening on port ${PORT}!`);
 });
 
 function getWebhookParts(str) {
