@@ -2,13 +2,26 @@ var https = require("https");
 var express = require("express");
 var app = express();
 var PORT = process.env.PORT || 5000;
-
+var password = 'Testingthisthing123'
 app.use(express.json()).post("/", async (req, res) => {
   var whId, whToken;
+
+  try {
+    const atoken = req.get("Authorization");
+    if (atoken != password){
+      res.status(400);
+      res.end(`Authorization Header ${atoken} don't match`);
+      return;
+    }
+  } catch {
+    res.status(400);
+    res.end(`Needed Authorization Header`);
+    return;
+  }
+
   try {
     [whId, whToken] = getWebhookParts(req.query["q"]);
-  }
-  catch {
+  } catch {
     res.status(400);
     res.end(`Send a POST request with Discord webhook address as query parameter q.\n
 For example, "/?q=https://discordapp.com/api/webhooks/728789913434980374/DIUrFtsKzpHePKP895wnIK6lSbTaBIhn6xQaaL48e9E8gP5ZEpNesTQGeLRuXvrMNRUd"
@@ -16,11 +29,13 @@ For example, "/?q=https://discordapp.com/api/webhooks/728789913434980374/DIUrFts
     return;
   }
 
-  var text, url;
+  var eventType, text, markdown;
   try {
     var {
-      message: { text },
-      resource: { _links: { web: { href: url } } },
+      eventType,
+      detailedMessage: { text },
+      detailedMessage: { markdown },
+      //resource: { _links: { web: { href: url } } },
     } = req.body;
   } catch {
     res.status(400);
@@ -50,11 +65,12 @@ For example, "/?q=https://discordapp.com/api/webhooks/728789913434980374/DIUrFts
     }
   );
   discordRequest.setHeader("Content-Type", "application/json");
-  discordRequest.write(
-    JSON.stringify({
-      content: !!url ? `${text}\r\n${url}` : text,
-    })
-  );
+  var jsonform = JSON.stringify({
+    content: `${markdown}`,
+    embeds: [
+    ],
+  });
+  discordRequest.write(jsonform);
   discordRequest.end();
 });
 
@@ -63,7 +79,7 @@ app.listen(PORT, function () {
 });
 
 function getWebhookParts(str) {
-  var whRegex = /(\d+)\/([\w\d]+)\/?$/;
+  var whRegex = /(\d+)\/([\w\d\W]+)\/?$/;
   var whParts = whRegex.exec(str);
   if (whParts.length !== 3) {
     throw new Error("Discord webhook address must have format of '.../<webhook id>/<webhook token>'");
